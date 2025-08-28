@@ -1,0 +1,63 @@
+
+
+
+
+
+module door_lock (reset,set_password,input_password,Enter,Access,Count,Alarm);
+               input reset,Enter;
+               input [11:0]set_password,input_password;
+               output Access,Alarm;
+               output [1:0]Count;
+               wire check;
+             
+     // Password comparator
+     assign check = (set_password == input_password);
+     modN_ctr counter (
+                       .clk(Enter),
+                       .Enable(~check),   // Increment counter if password incorrect
+                       .resetN(reset),    // Active-low reset
+                       .cnt(Count),       // Current wrong attempt count
+                       .Access(Access),   // Output: Access granted
+                       .Alarm(Alarm)      // Output: Alarm triggered
+    ); 
+      
+endmodule
+
+module modN_ctr (
+           input clk,            // Clock signal
+           input Enable,         // Enable increment (when wrong password)
+           input resetN,         // Active-low reset
+           output reg [1:0] cnt, // Wrong attempt count
+           output reg Access,    // Access granted output
+           output reg Alarm      // Alarm output
+);
+      parameter N = 4;
+      always@(posedge clk or posedge resetN)
+                 if(resetN)
+                       begin
+                           Alarm <= 0;
+                           cnt   <= 0;              
+                       end
+                 else if (Enable & cnt == N-2)    // One attempt before max
+                       begin
+                           Access <= 0;
+                           cnt    <= cnt +1;
+                       end
+                 else if (cnt == N-1)            // Max wrong attempts reached
+                       begin 
+                           Access <= 0;
+                           Alarm  <= 1;
+                       end
+                 else if (Enable)                // Normal wrong attempt
+                       begin 
+                           cnt    <= cnt+1;
+                           Access <= 0;
+                           Alarm  <= 0;
+                       end
+                 else                           // Enable inactive → password correct
+                       begin
+                           cnt    <= 0;
+                           Access <= 1;
+                           Alarm  <= 0;
+                       end
+ endmodule

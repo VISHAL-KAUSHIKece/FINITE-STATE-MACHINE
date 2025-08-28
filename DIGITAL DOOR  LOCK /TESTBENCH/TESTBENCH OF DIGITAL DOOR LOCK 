@@ -1,0 +1,70 @@
+`timescale 1ns/1ps
+
+module door_lock_tb;
+
+    // Testbench signals
+    reg reset;
+    reg Enter;
+    reg [11:0] set_password;
+    reg [11:0] input_password;
+    wire Access;
+    wire Alarm;
+    wire [1:0] Count;
+
+    // Instantiate the door_lock module
+    door_lock uut (
+        .reset(reset),
+        .Enter(Enter),
+        .set_password(set_password),
+        .input_password(input_password),
+        .Access(Access),
+        .Alarm(Alarm),
+        .Count(Count)
+    );
+
+    // Clock generation (Enter acts as clock pulse)
+    initial Enter = 0;
+    always #5 Enter = ~Enter; // 10ns period
+
+    // Test sequence
+    initial begin
+        // Monitor signals
+        $monitor("Time=%0t | reset=%b | Enter=%b | input=%b | Count=%d | Access=%b | Alarm=%b",
+                 $time, reset, Enter, input_password, Count, Access, Alarm);
+
+        // ----------------------
+        // Initialize
+        // ----------------------
+        reset = 1;       // Reset active
+        set_password = 12'b101010101010; // preset password
+        input_password = 12'b000000000000; // initial wrong password
+        #12 reset = 0;    // Release reset
+
+        // ----------------------
+        // Wrong password attempts
+        // ----------------------
+        input_password = 12'b000000000001; #10; // 1st wrong
+        input_password = 12'b000000000010; #10; // 2nd wrong
+        input_password = 12'b000000000011; #10; // 3rd wrong -> Alarm should trigger
+
+        // ----------------------
+        // Correct password entry
+        // ----------------------
+        input_password = 12'b101010101010; #10; // Correct password -> Access=1, Alarm=0
+
+        // ----------------------
+        // Test reset behavior
+        // ----------------------
+        reset = 1; #10;       // Activate reset
+        reset = 0; #10;       // Release reset
+
+        // ----------------------
+        // Another wrong attempt after reset
+        // ----------------------
+        input_password = 12'b000000000001; #10; // Should increment Count=1
+
+        // End simulation
+        #20 $finish;
+    end
+
+endmodule
