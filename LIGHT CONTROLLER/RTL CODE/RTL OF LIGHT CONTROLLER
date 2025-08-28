@@ -1,0 +1,60 @@
+/* THERE ARE THREE LAMPS RED, GREEN,YELLOW. THEY SHOULD GLOW CYCLICALLY WITH A FIXED TIME INTERVAL 5ms ?
+
+SOME OBSERVATION 
+: The FSM will have 3 states, corrosponding to glowing state of lamp
+: Input set is null; state transition will occur whenever clock single comes
+: This is a MOORE machine, since the lamp that will glow only depend on state not on input 
+
+
+00 s_RED  red
+01 s_GREEN  green
+11 s_YELLOW  yellow
+*/
+
+module fsm_traffic_light (RED,GREEN,YELLOW,clk, reset);
+        input clk,reset;
+        output reg RED;
+        output reg YELLOW;
+        output reg GREEN;
+        parameter s_RED=2'b00, s_GREEN=2'b01, s_YELLOW=2'b11;
+        reg [1:0]state; 
+        reg [31:0] counter;             // for change in time; # 10 is synthesiable in always block
+        
+        // Adjust according to your clock frequency
+        // Example: for 50 MHz clock → 5ms = 250000 cycles
+        parameter MAX_COUNT = 32'd250000;  
+
+        // State transition with counter-based delay
+    always @(posedge clk)
+     begin
+            if (reset) 
+        begin
+            state   <= s_RED;
+            counter <= 0;
+         end else begin
+            if (counter == MAX_COUNT)
+            begin                          
+          case(state)      
+                s_RED     :  state <=  s_GREEN;
+                s_GREEN   :  state <=  s_YELLOW;
+                s_YELLOW  :  state <=  s_RED;
+         default : state <= s_RED;
+          endcase
+             counter <= 0;
+            end else begin
+                counter <= counter + 1;
+           end 
+        end
+     end
+    
+
+    always @(*)
+        begin
+        case(state)
+        s_RED     : begin RED = 1; GREEN = 0; YELLOW = 0; end
+        s_GREEN   : begin RED = 0; GREEN = 1; YELLOW = 0; end
+        s_YELLOW  : begin RED = 0; GREEN = 0; YELLOW = 1; end
+        default   : begin RED = 0; GREEN = 0; YELLOW = 0; end  
+      endcase
+      end
+endmodule

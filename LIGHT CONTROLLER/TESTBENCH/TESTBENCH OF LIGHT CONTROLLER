@@ -1,0 +1,56 @@
+`timescale 1ns/1ps
+
+module tb_fsm_traffic_light_manual;
+
+    // Testbench signals
+    reg clk;
+    reg reset;
+    wire RED, GREEN, YELLOW;
+
+    // Instantiate DUT
+    fsm_traffic_light uut (
+        .clk(clk),
+        .reset(reset),
+        .RED(RED),
+        .GREEN(GREEN),
+        .YELLOW(YELLOW)
+    );
+
+    // Clock generation: 10 ns period = 100 MHz
+    always #5 clk = ~clk;
+
+    initial begin
+        // Initialize
+        clk = 0;
+        reset = 1;
+        #20 reset = 0;
+
+        // Manually drive through states by waiting short time
+        // Instead of 5ms, we'll just wait 50ns per state
+        $display("---- Starting Manual Cycle ----");
+
+        // RED state
+        #50;
+        $display("Time=%0t ns | RED=%b GREEN=%b YELLOW=%b", $time, RED, GREEN, YELLOW);
+
+        // GREEN state (force by skipping counter wait)
+        uut.state = uut.s_GREEN;  
+        #50;
+        $display("Time=%0t ns | RED=%b GREEN=%b YELLOW=%b", $time, RED, GREEN, YELLOW);
+
+        // YELLOW state
+        uut.state = uut.s_YELLOW;
+        #50;
+        $display("Time=%0t ns | RED=%b GREEN=%b YELLOW=%b", $time, RED, GREEN, YELLOW);
+
+        // Back to RED
+        uut.state = uut.s_RED;
+        #50;
+        $display("Time=%0t ns | RED=%b GREEN=%b YELLOW=%b", $time, RED, GREEN, YELLOW);
+
+        $display("---- End of One Cycle ----");
+
+        $finish;
+    end
+
+endmodule

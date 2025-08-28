@@ -1,0 +1,42 @@
+/* To detect the sequence 1010 in Mealy machine 
+N=4 therefore NO. of states = 4
+         in=0         in=1
+   s0 ->  s0/0        s1/0
+   s1 ->  s2/0        s1/0
+   s2 ->  s0/0        s3/0
+   s3 ->  s2/1        s1/0
+  */
+  
+module fsm_sequence( 
+                     input clk,
+                     input rst,
+                     input in,
+                     output reg out
+                     );
+      parameter s0 = 2'b00,
+                s1 = 2'b01,
+                s2 = 2'b10,
+                s3 = 2'b11;
+      reg[1:0]next_state,present_state;
+  
+    always @(posedge clk or negedge rst)
+      begin
+        if(!rst)
+        present_state <= 2'b00;          // 0/0 s0(starting point)
+        else
+        present_state <= next_state;
+      end
+        
+    always @ *
+    case(present_state)
+                       s0   :  begin  next_state  =  in ? s1 : s0;  out = 1'b0; end   // "begin" used due to multiple statement(2 statement) in ? s1 : s0;  out otherwise error will generate            
+                       s1   :  begin  next_state  =  in ? s1 : s2 ; out = 1'b0; end
+                       s2   :  begin  next_state  =  in ? s3 : s0 ; out = 1'b0; end
+                       s3   :  begin  next_state  =  in ? s1 : s2 ;
+                                      out     =  in ? 1'b0 : 1'b1 ; end       // input is 1(output 0) if input is 0(output 1)
+                    default :  begin next_state = 2'b00;
+                                  out = 1'b0; end
+    endcase
+endmodule
+                                  
+                            
